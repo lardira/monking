@@ -1,6 +1,18 @@
 package mock
 
-import "github.com/lardira/monking/internal/model"
+import (
+	"math"
+
+	"github.com/lardira/monking/internal/model"
+)
+
+var HeavenJungle = model.Jungle{
+	ID:       777,
+	Title:    "Heaven",
+	Monkeys:  math.MaxInt32,
+	Bananas:  math.MaxInt32,
+	Coconuts: math.MaxInt32,
+}
 
 var (
 	Jungles = []model.Jungle{
@@ -11,5 +23,6 @@ var (
 			Bananas:  100,
 			Coconuts: 5,
 		},
+		HeavenJungle,
 	}
 )

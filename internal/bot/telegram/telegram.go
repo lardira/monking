@@ -11,9 +11,12 @@ import (
 	"github.com/lardira/monking/internal/mock"
 )
 
+const (
+	minRaidSize = 10
+)
+
 type TelegramBot struct {
-	bot        *bot.Bot
-	handlerIDs []string
+	bot *bot.Bot
 }
 
 func New(apiToken string) (*TelegramBot, error) {
@@ -36,6 +39,9 @@ func New(apiToken string) (*TelegramBot, error) {
 		"start":  newBot.jungleHandler,
 		"jungle": newBot.jungleHandler,
 		"help":   newBot.helpHandler,
+		"raid":   newBot.raidHandler,
+		"buy":    newBot.buyHandler,
+		// "use":    newBot.useHandler,
 	}
 	for command, handler := range handlers {
 		newBot.bot.RegisterHandler(
@@ -55,46 +61,84 @@ func (tb *TelegramBot) Start(ctx context.Context) {
 	tb.bot.Start(ctx)
 }
 
-func (tb *TelegramBot) SendTextMessage(ctx context.Context, chatId int64, text string) (*models.Message, error) {
+func (tb *TelegramBot) SendTextMessage(ctx context.Context, chatId int64, text string) *models.Message {
 	m, err := tb.bot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    chatId,
 		Text:      text,
 		ParseMode: models.ParseModeMarkdown,
 	})
-	return m, err
+	if err != nil {
+		log.Printf("Error sending message: %v", err)
+	}
+
+	return m
 }
 
 func (tb *TelegramBot) defaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	_, err := tb.SendTextMessage(
+	tb.SendTextMessage(
 		ctx,
 		update.Message.Chat.ID,
 		prompt.Default(),
 	)
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
-	}
 }
 
 func (tb *TelegramBot) helpHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
-	_, err := tb.SendTextMessage(
+	tb.SendTextMessage(
 		ctx,
 		update.Message.Chat.ID,
 		prompt.Help(),
 	)
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
-	}
 }
 
 func (tb *TelegramBot) jungleHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	jungle := mock.Jungles[0]
 
-	_, err := tb.SendTextMessage(
+	tb.SendTextMessage(
 		ctx,
 		update.Message.Chat.ID,
 		prompt.JungleFromModel(&jungle),
 	)
-	if err != nil {
-		log.Printf("Error sending message: %v", err)
+}
+
+func (tb *TelegramBot) raidHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	//TODO:
+	// check whether the user currently in raid
+	// find monkeys with with similar army size and list them
+	// 		if none, list other available jungles
+	//		if none, list the Heaven Jungle
+
+	jungle := mock.Jungles[0]
+
+	if jungle.Monkeys < minRaidSize {
+		tb.SendTextMessage(
+			ctx,
+			update.Message.Chat.ID,
+			prompt.RaidUnavailable(),
+		)
 	}
+
+	tb.SendTextMessage(
+		ctx,
+		update.Message.Chat.ID,
+		prompt.RaidList(mock.Jungles),
+	)
+}
+
+func (tb *TelegramBot) buyHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	tb.SendTextMessage(
+		ctx,
+		update.Message.Chat.ID,
+		prompt.Buy(),
+	)
+}
+
+// TODO: use functionality
+func (tb *TelegramBot) useHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
+	jungle := mock.Jungles[0]
+
+	tb.SendTextMessage(
+		ctx,
+		update.Message.Chat.ID,
+		prompt.JungleFromModel(&jungle),
+	)
 }
