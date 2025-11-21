@@ -6,3 +6,10 @@ require (
 	github.com/go-telegram/bot v1.17.0
 	github.com/joho/godotenv v1.5.1
 )
+
+require (
+	github.com/ncruces/go-sqlite3 v0.30.1 // indirect
+	github.com/ncruces/julianday v1.0.0 // indirect
+	github.com/tetratelabs/wazero v1.10.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+)

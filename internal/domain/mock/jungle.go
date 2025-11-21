@@ -3,10 +3,10 @@ package mock
 import (
 	"math"
 
-	"github.com/lardira/monking/internal/model"
+	"github.com/lardira/monking/internal/domain"
 )
 
-var HeavenJungle = model.Jungle{
+var HeavenJungle = domain.Jungle{
 	ID:       777,
 	Title:    "Heaven",
 	Monkeys:  math.MaxInt32,
@@ -15,7 +15,7 @@ var HeavenJungle = model.Jungle{
 }
 
 var (
-	Jungles = []model.Jungle{
+	Jungles = []domain.Jungle{
 		{
 			ID:       1,
 			Title:    "Test",

@@ -2,24 +2,23 @@ package telegram
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/lardira/monking/internal/bot/telegram/middleware"
 	"github.com/lardira/monking/internal/bot/telegram/prompt"
-	"github.com/lardira/monking/internal/mock"
-)
-
-const (
-	minRaidSize = 10
+	"github.com/lardira/monking/internal/domain/mock"
 )
 
 type TelegramBot struct {
 	bot *bot.Bot
+	db  *sql.DB
 }
 
-func New(apiToken string) (*TelegramBot, error) {
+func New(apiToken string, db *sql.DB) (*TelegramBot, error) {
 	if apiToken == "" {
 		return nil, errors.New("invalid telegram api token: cannot be empty")
 	}
@@ -33,7 +32,10 @@ func New(apiToken string) (*TelegramBot, error) {
 	if err != nil {
 		return nil, err
 	}
-	newBot.bot = b
+
+	middlewares := []bot.Middleware{
+		middleware.UserAuth,
+	}
 
 	handlers := map[string]func(context.Context, *bot.Bot, *models.Update){
 		"start":  newBot.jungleHandler,
@@ -44,14 +46,16 @@ func New(apiToken string) (*TelegramBot, error) {
 		// "use":    newBot.useHandler,
 	}
 	for command, handler := range handlers {
-		newBot.bot.RegisterHandler(
+		b.RegisterHandler(
 			bot.HandlerTypeMessageText,
 			command,
 			bot.MatchTypeCommand,
 			handler,
+			middlewares...,
 		)
 	}
 
+	newBot.bot = b
 	return newBot, nil
 }
 
@@ -109,7 +113,7 @@ func (tb *TelegramBot) raidHandler(ctx context.Context, b *bot.Bot, update *mode
 
 	jungle := mock.Jungles[0]
 
-	if jungle.Monkeys < minRaidSize {
+	if !jungle.CanRaid(&jungle) {
 		tb.SendTextMessage(
 			ctx,
 			update.Message.Chat.ID,

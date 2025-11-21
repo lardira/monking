@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lardira/monking/internal/model"
+	"github.com/lardira/monking/internal/domain"
 )
 
 const (
@@ -39,7 +39,7 @@ func Jungle(title string, bananas int, coconuts int, monkeys int) string {
 	)
 }
 
-func JungleFromModel(model *model.Jungle) string {
+func JungleFromModel(model *domain.Jungle) string {
 	return Jungle(
 		model.Title,
 		model.Bananas,
@@ -48,7 +48,7 @@ func JungleFromModel(model *model.Jungle) string {
 	)
 }
 
-func RaidList(jungles []model.Jungle) string {
+func RaidList(jungles []domain.Jungle) string {
 	var raidList strings.Builder
 
 	for _, jungle := range jungles {

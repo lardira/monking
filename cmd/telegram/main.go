@@ -9,6 +9,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/lardira/monking/internal/bot/telegram"
+	"github.com/lardira/monking/internal/env"
+
+	"github.com/lardira/monking/internal/db/sqlite"
 )
 
 func init() {
@@ -18,15 +21,18 @@ func init() {
 }
 
 func main() {
-	token := os.Getenv("TELEGRAM_API_TOKEN")
-	if token == "" {
-		log.Fatal("TELEGRAM_API_TOKEN env is required")
+	db, err := sqlite.New(env.MustGetEnv("DATABASE_NAME"))
+	if err != nil {
+		log.Fatalf("could not connect to db: %v", err)
 	}
+	defer db.Close()
+
+	token := env.MustGetEnv("TELEGRAM_API_TOKEN")
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 
-	bot, err := telegram.New(token)
+	bot, err := telegram.New(token, db)
 	if err != nil {
 		log.Fatalf("could not bootstrap telegram bot: %v", err)
 	}
