@@ -1,6 +1,7 @@
 package domain
 
 type User struct {
-	ID       string
-	Username string
+	ID         string
+	TelegramID *string
+	DiscordID  *string
 }

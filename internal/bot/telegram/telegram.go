@@ -4,21 +4,26 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"github.com/lardira/monking/internal/bot/telegram/middleware"
 	"github.com/lardira/monking/internal/bot/telegram/prompt"
+	"github.com/lardira/monking/internal/contextkeys"
 	"github.com/lardira/monking/internal/domain/mock"
+	"github.com/lardira/monking/internal/service"
 )
 
 type TelegramBot struct {
 	bot *bot.Bot
 	db  *sql.DB
+
+	userService *service.UserService
 }
 
-func New(apiToken string, db *sql.DB) (*TelegramBot, error) {
+func New(apiToken string, db *sql.DB, userService *service.UserService) (*TelegramBot, error) {
 	if apiToken == "" {
 		return nil, errors.New("invalid telegram api token: cannot be empty")
 	}
@@ -34,7 +39,7 @@ func New(apiToken string, db *sql.DB) (*TelegramBot, error) {
 	}
 
 	middlewares := []bot.Middleware{
-		middleware.UserAuth,
+		middleware.NewUserAuth(userService),
 	}
 
 	handlers := map[string]func(context.Context, *bot.Bot, *models.Update){
@@ -96,6 +101,14 @@ func (tb *TelegramBot) helpHandler(ctx context.Context, b *bot.Bot, update *mode
 
 func (tb *TelegramBot) jungleHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	jungle := mock.Jungles[0]
+
+	if user, ok := contextkeys.UserFromContext(ctx); ok {
+		tb.SendTextMessage(
+			ctx,
+			update.Message.Chat.ID,
+			fmt.Sprintf("the user is %v", user.ID),
+		)
+	}
 
 	tb.SendTextMessage(
 		ctx,

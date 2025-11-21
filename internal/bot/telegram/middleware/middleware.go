@@ -2,20 +2,35 @@ package middleware
 
 import (
 	"context"
+	"log"
+	"strconv"
 
-	"github.com/go-telegram/bot"
+	tgbot "github.com/go-telegram/bot"
+
 	"github.com/go-telegram/bot/models"
 	"github.com/lardira/monking/internal/contextkeys"
-	"github.com/lardira/monking/internal/domain"
+	"github.com/lardira/monking/internal/service"
 )
 
-func UserAuth(next bot.HandlerFunc) bot.HandlerFunc {
-	return func(ctx context.Context, bot *bot.Bot, update *models.Update) {
-		// TODO: auth
-		// check if user has account on the channel (e.g. if it has userId of telegram in the db)
-		//	no: transfer to registration/loing, should be one command
-		//	yes: next handler can be called, context is filled with user entity
-		ctx = context.WithValue(ctx, contextkeys.ContextKeyUser, domain.User{})
-		next(ctx, bot, update)
+func NewUserAuth(userService *service.UserService) tgbot.Middleware {
+	return func(next tgbot.HandlerFunc) tgbot.HandlerFunc {
+		return func(ctx context.Context, bot *tgbot.Bot, update *models.Update) {
+			userTelegramId := strconv.FormatInt(update.Message.From.ID, 10)
+			user, err := userService.FindOrCreateByTelegramID(userTelegramId)
+			if err != nil {
+				_, err := bot.SendMessage(ctx, &tgbot.SendMessageParams{
+					ChatID:    update.Message.Chat.ID,
+					Text:      "Right now i cannot create an account for you \\:\\(",
+					ParseMode: models.ParseModeMarkdown,
+				})
+				if err != nil {
+					log.Printf("Error sending message: %v", err)
+				}
+				return
+			}
+
+			ctx = context.WithValue(ctx, contextkeys.ContextKeyUser, user)
+			next(ctx, bot, update)
+		}
 	}
 }

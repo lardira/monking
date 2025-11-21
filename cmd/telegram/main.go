@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/lardira/monking/internal/bot/telegram"
 	"github.com/lardira/monking/internal/env"
+	"github.com/lardira/monking/internal/service"
 
 	"github.com/lardira/monking/internal/db/sqlite"
 )
@@ -32,7 +33,11 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 
-	bot, err := telegram.New(token, db)
+	userRepository := sqlite.NewUserRepository()
+
+	userService := service.NewUserService(userRepository)
+
+	bot, err := telegram.New(token, db, userService)
 	if err != nil {
 		log.Fatalf("could not bootstrap telegram bot: %v", err)
 	}
