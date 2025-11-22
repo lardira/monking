@@ -28,15 +28,14 @@ func main() {
 	}
 	defer db.Close()
 
-	token := env.MustGetEnv("TELEGRAM_API_TOKEN")
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 
-	userRepository := sqlite.NewUserRepository()
+	userRepository := sqlite.NewUserRepository(db)
 
 	userService := service.NewUserService(userRepository)
 
+	token := env.MustGetEnv("TELEGRAM_API_TOKEN")
 	bot, err := telegram.New(token, db, userService)
 	if err != nil {
 		log.Fatalf("could not bootstrap telegram bot: %v", err)

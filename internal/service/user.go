@@ -1,15 +1,12 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
 
+	"github.com/google/uuid"
+	"github.com/lardira/monking/internal/db"
 	"github.com/lardira/monking/internal/db/repository"
 	"github.com/lardira/monking/internal/domain"
-)
-
-var (
-	ErrUserNotFound error = errors.New("user not found")
 )
 
 type UserService struct {
@@ -23,30 +20,19 @@ func NewUserService(userRepository repository.UserRepository) *UserService {
 }
 
 func (s *UserService) Create(telegramId *string, discordId *string) (*domain.User, error) {
-	return nil, nil
-}
-
-func (s *UserService) FindById(id string) {
-
-}
-
-func (s *UserService) FindByTelegramID(telegramId string) (*domain.User, error) {
-	user, err := s.userRepository.GetByTelegramID(telegramId)
+	id := uuid.NewString()
+	u, err := s.userRepository.Create(id, telegramId, discordId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrUserNotFound
-		}
-
 		return nil, err
 	}
 
-	return user, nil
+	return u, nil
 }
 
 func (s *UserService) FindOrCreateByTelegramID(telegramId string) (*domain.User, error) {
 	user, err := s.userRepository.GetByTelegramID(telegramId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, db.ErrUserNotFound) {
 			return s.Create(&telegramId, nil)
 		}
 
